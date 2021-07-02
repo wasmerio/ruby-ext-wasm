@@ -29,6 +29,11 @@ jobs:
             target-name: 'x86_64-apple-darwin'
             rust-toolchain: 'stable'
 
+          - id: 'windows-amd64'
+            os: 'windows-latest'
+            target-name: 'x86_64-pc-windows-msvc'
+            rust-toolchain: 'stable'
+
       # As soon as one job fails in the matrix, all the other
       # in-progress jobs are canceled.
       fail-fast: false
@@ -58,16 +63,22 @@ jobs:
           export PATH="$HOME/.cargo/bin:$PATH"
           test -f $HOME/.cargo/bin/just || cargo install just
 
-      - name: Compile the library
+      - name: Compile the library and run the tests
+        if: ${{ matrix.target.id != 'windows-amd64' }}
         shell: bash
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
-          gem install rake
           gem install bundler
           just build
+          just test-all
 
-      - name: Run the tests
+      - name: Compile the library and run the tests (Windows)
+        if: ${{ matrix.target.id == 'windows-amd64' }}
+        env:
+          NO_LINK_RUTIE: true
         shell: bash
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
+          gem install bundler
+          just build
           just test-all
